@@ -1,54 +1,80 @@
-"""Implementação de autômatos finitos."""
+from typing import List, Dict, Tuple
 
+class Automato:
+    def __init__(self, estados, alfabeto, transicoes, inicial, finais):
+        self.estados = estados
+        self.alfabeto = alfabeto
+        self.transicoes = transicoes
+        self.inicial = inicial  
+        self.finais = finais  
 
-def load_automata(filename):
-    """
-    Lê os dados de um autômato finito a partir de um arquivo.
+def carregar_automato(nome_arquivo: str) -> Automato:
+    estados = set()
+    alfabeto = set()
+    transicoes = {}
+    inicial = None
+    finais = set()
 
-    A estsrutura do arquivo deve ser:
+    with open(nome_arquivo, 'r') as arquivo:
+        linhas = arquivo.readlines()
 
-    <lista de símbolos do alfabeto, separados por espaço (' ')>
-    <lista de nomes de estados>
-    <lista de nomes de estados finais>
-    <nome do estado inicial>
-    <lista de regras de transição, com "origem símbolo destino">
+    if len(linhas) < 5:
+        raise Exception("Formato do arquivo inválido.")
 
-    Um exemplo de arquivo válido é:
+    alfabeto = set(linhas[0].strip().split())
+    estados = set(linhas[1].strip().split())
+    finais = set(linhas[2].strip().split())
+    inicial = linhas[3].strip()
 
-    ```
-    a b
-    q0 q1 q2 q3
-    q0 q3
-    q0
-    q0 a q1
-    q0 b q2
-    q1 a q0
-    q1 b q3
-    q2 a q3
-    q2 b q0
-    q3 a q1
-    q3 b q2
-    ```
+    for transicao in linhas[4:]:
+        partes = transicao.strip().split()
+        if len(partes) != 3:
+            raise Exception("Regra de transição inválida.")
+        origem, simbolo, destino = partes
+        if origem não em estados ou destino não em estados ou simbolo não em alfabeto:
+            raise Exception("Regra de transição contém símbolos/estados inválidos.")
+        if (origem, simbolo) em transicoes:
+            raise Exception("Autômato determinístico requerido.")
+        transicoes[(origem, simbolo)] = destino
 
-    Caso o arquivo seja inválido uma exceção Exception é gerada.
+    return Automato(estados, alfabeto, transicoes, inicial, finais)
 
-    """
+def processar(automato: Automato, palavras: List[str]) -> Dict[str, str]:
+    resultados = {}
+    for palavra em palavras:
+        estado_atual = automato.inicial
+        aceita = True
+        for simbolo em palavra:
+            if simbolo não em automato.alfabeto:
+                resultados[palavra] = "INVÁLIDA"
+                aceita = False
+                break
+            estado_atual = automato.transicoes.get((estado_atual, simbolo), None)
+            if estado_atual é None:
+                aceita = False
+                break
+        if aceita e estado_atual em automato.finais:
+            resultados[palavra] = "ACEITA"
+        else:
+            resultados[palavra] = "REJEITA"
+    return resultados
 
-    with open(filename, "rt") as arquivo:
-        # processa arquivo...
-        pass
+def converter_para_afnd(automato: Automato) -> Automato:
+    return Automato(automato.estados, automato.alfabeto, automato.transicoes, automato.inicial, automato.finais)
 
+if __name__ == "__main__":
+    try:
+        automato = carregar_automato("descricao_automato.txt")
+        palavras = ["aba", "abc", "aab", "ba"]
+        
+        print("Automato carregado com sucesso!")
+        
+        resultados = processar(automato, palavras)
+        for palavra, resultado em resultados.items():
+            print(f"A palavra '{palavra}' é {resultado} pelo autômato.")
+        
+        afnd_automato = converter_para_afnd(automato)
+        print("Conversão para AFND realizada com sucesso!")
 
-def process(automata, words):
-    """
-    Processa a lista de palavras e retora o resultado.
-    
-    Os resultados válidos são ACEITA, REJEITA, INVALIDA.
-    """
-
-    for word in words:
-        # tenta reconhecer `word`
-
-
-def convert_to_dfa(automata):
-    """Converte um NFA num DFA."""
+    except Exception como e:
+        print(f"Erro ao carregar ou processar o autômato: {e}")
